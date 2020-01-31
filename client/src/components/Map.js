@@ -11,7 +11,7 @@ import Context from '../context';
 const INITIAL_VIEWPORT  = {
   latitude: -36.8484597,
   longitude: 174.7633315,
-  zoom: 10
+  zoom: 13
 }
 
 const Map = ({ classes }) => {
@@ -184,11 +184,15 @@ const Map = ({ classes }) => {
           offsetLeft={-19}
           offsetTop={-37}           
           >
-          <PinIcon 
-            color={vehicle.status}
-            type="bus" 
-            onClick={() => handleSelectPin(vehicle)}
-          />
+          <div className={classes.popupTab}>
+            <PinIcon 
+              color={vehicle.status}
+              type="bus"         
+              onClick={() => handleSelectPin(vehicle)}
+            />
+            {/* <Typography>{vehicle.vehicle.license_plate}</Typography> */}
+          </div>
+          
         </Marker>
       ))}
 
