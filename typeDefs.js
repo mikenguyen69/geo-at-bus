@@ -27,16 +27,29 @@ module.exports = gql`
         vehicle: VehicleObject       
     }
 
+    type TripUpdate {
+        _id: ID
+        id: String
+        trip_update: TripObject       
+    }
+
+    type TripObject {
+        trip: Trip
+        vehicle: Vehicle
+        timestamp: Float
+        delay: Float
+    }
     
     type VehicleObject { 
-        trip: TripObject   
+        trip: Trip   
         position: Position
         timestamp: Float
         vehicle: Vehicle
         occupancy_status: Float  
+        status: Float
     }
 
-    type TripObject {
+    type Trip {
         trip_id: String,
         start_time: String
         start_date: String
@@ -44,7 +57,6 @@ module.exports = gql`
         route_id: String
         direction_id: Float
     }
-
 
     type Vehicle {        
         id: String
@@ -80,6 +92,7 @@ module.exports = gql`
         me: User
         getPins: [Pin!] 
         getVehiclePositions: [VehiclePosition!]
+        getTripUpdates: [TripUpdate!]
     }
 
     type Mutation {

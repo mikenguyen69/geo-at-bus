@@ -6,6 +6,7 @@ const context = createContext({
     draft: null, 
     pins: [],
     vehicles: [],
+    trips: [],
     currentPin: null
 })
 

@@ -2,7 +2,7 @@ import React, {useState, useEffect, useContext} from "react";
 import { withStyles } from "@material-ui/core/styles";
 import ReactMapGL, {NavigationControl, Marker, Popup} from 'react-map-gl';
 import {useClient} from '../client';
-import {GET_PINS_QUERY, GET_VEHICLE_POSITION_QUERY} from '../graphql/queries';
+import {GET_PINS_QUERY, GET_VEHICLE_POSITION_QUERY, GET_TRIP_UPDATE_QUERY} from '../graphql/queries';
 import Typography from "@material-ui/core/Typography";
 import PinIcon from './PinIcon';
 import Context from '../context';
@@ -19,6 +19,7 @@ const Map = ({ classes }) => {
   const {state, dispatch} = useContext(Context);
   const [viewport, setViewport] = useState(INITIAL_VIEWPORT);
   const [popup, setPopup] = useState(null);
+  const [vehicles, setVehicles] = useState([]);
 
   useEffect(() => {
     getUserPosition()
@@ -29,14 +30,48 @@ const Map = ({ classes }) => {
   }, [])
 
   useEffect(() => {
-    getVehicles()
+    getVehicles()     
   },[])
+
+  const getTripUpdates = async (vehicleList) => {
+    const {getTripUpdates} = await client.request(GET_TRIP_UPDATE_QUERY);
+    //dispatch({type: "GET_TRIPS", payload: getTripUpdates});
+    const newVehicles = vehicleList.map(obj => {
+      let newObj = obj;                
+      const trip = getTripUpdates.find(x => x.trip_update.vehicle.id === obj.vehicle.vehicle.id);
+      if (trip !== undefined) {
+          const delay = trip.trip_update.delay;
+          let status = "";
+          if (delay > 200) {
+              status = "red"
+          }
+          else if (delay > 0) {
+              status = "blue"
+          }
+          else {
+              status = "green"
+          }
+
+          newObj.vehicle.status = status;
+      }
+
+      return newObj;
+    });
+    
+    
+    console.log(vehicleList);
+    setVehicles(vehicleList.filter(x => x.vehicle.status !== null));
+  }
 
   const getVehicles = async () => {
     const {getVehiclePositions} = await client.request(GET_VEHICLE_POSITION_QUERY);
-    dispatch({type: "GET_VEHICLES", payload: getVehiclePositions})
+    //dispatch({type: "GET_VEHICLES", payload: getVehiclePositions})
+    
+    // setVehicles(getVehiclePositions);
 
     console.log(getVehiclePositions.length);
+
+    getTripUpdates(getVehiclePositions);
   }
 
   const getPins = async () => {
@@ -77,6 +112,11 @@ const Map = ({ classes }) => {
     else {
       return " late!!!!"
     }
+  }
+
+  const handleShowSpeed = speed => {
+    if (speed > 0) return `It is moving at speed of ${speed.toFixed(2)} km/h`;
+    else return 'It is not moving at all !!!'
   }
 
   return (
@@ -136,7 +176,7 @@ const Map = ({ classes }) => {
       ))} */}
 
       {/* Create vehicle*/}
-      {state.vehicles.map(({_id, vehicle}) => (
+      {vehicles.map(({_id, vehicle, status}) => (
         <Marker
           key={_id}
           latitude={vehicle.position.latitude}
@@ -145,9 +185,9 @@ const Map = ({ classes }) => {
           offsetTop={-37}           
           >
           <PinIcon 
-            color="blue"
+            color={vehicle.status}
             type="bus" 
-            onClick={() => console.log(vehicle)}
+            onClick={() => handleSelectPin(vehicle)}
           />
         </Marker>
       ))}
@@ -155,22 +195,23 @@ const Map = ({ classes }) => {
       {/* Show Popups*/}
       {popup && (
         <Popup anchor="top"
-          latitude={popup.latitude}
-          longitude={popup.longitude}
+          latitude={popup.position.latitude}
+          longitude={popup.position.longitude}
           closeOnClick={false}
           onClose={() => setPopup(null)}
         >
-          <img 
+          {/* <img 
             className={classes.popupImage}
             src={popup.image} 
             alt={popup.type}
-          />
+          /> */}
           <div className={classes.popupTab}>
             <Typography>
-              <b>{popup.type}</b> {" is "} <font color={popup.color}>{handleShowStatus(popup.color)}</font>
+              <b>{popup.vehicle.label} (Plate No of {popup.vehicle.license_plate})</b> {" is "} <font color={popup.status}>{handleShowStatus(popup.status)}</font>
             </Typography>            
-            <Typography paragraph> 
-              <blockquote>&quot;<i>{popup.note}</i>&quot;</blockquote>
+            <Typography> 
+              <br />
+              <i>{handleShowSpeed(popup.position.speed)}</i>
             </Typography>
           </div>
         </Popup>

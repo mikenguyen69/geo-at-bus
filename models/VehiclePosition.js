@@ -24,6 +24,7 @@ const VehiclePositionSchema = new mongoose.Schema({
             license_plate: String
         },
         occupancy_status: Number,
+        status: Number
     },    
     is_delete: Boolean
 },)

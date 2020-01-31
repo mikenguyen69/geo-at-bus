@@ -64,10 +64,39 @@ export default function reducer(state, {type, payload}) {
                 draft: null
             }
 
-        case "GET_VEHICLES": 
+        case "GET_VEHICLES":             
             return {
                 ...state,
                 vehicles: payload
+            }
+
+        case "GET_TRIPS":           
+            const trips = payload;
+            const updatedVehicles = state.vehicles.map(obj => {
+                let newObj = obj;                
+                const trip = trips.find(x => x.id === obj.vehicle.trip.trip_id);
+                if (trip !== undefined) {
+                    const delay = trip.trip_update.delay;
+                    let status = "";
+                    if (delay > 200) {
+                        status = "red"
+                    }
+                    else if (delay > 0) {
+                        status = "blue"
+                    }
+                    else {
+                        status = "green"
+                    }
+
+                    newObj.status = status;
+                }
+                return newObj;
+            });
+            
+            return {
+                ...state,
+                trips: payload,
+                vehicles: updatedVehicles
             }
 
         default: 

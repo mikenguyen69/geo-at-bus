@@ -61,7 +61,30 @@ export const GET_VEHICLE_POSITION_QUERY = `{
                 license_plate
             }
             occupancy_status
+            status
         }       
     }
 }
 `
+
+export const GET_TRIP_UPDATE_QUERY = `{
+    getTripUpdates {
+        _id
+        id
+        trip_update {
+            trip {
+                trip_id
+                start_time
+                start_date
+                route_id
+            }         
+            vehicle {
+                id
+                label
+                license_plate
+            }
+            timestamp
+            delay
+        }
+    }
+}`
