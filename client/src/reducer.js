@@ -64,6 +64,12 @@ export default function reducer(state, {type, payload}) {
                 draft: null
             }
 
+        case "GET_VEHICLES": 
+            return {
+                ...state,
+                vehicles: payload
+            }
+
         default: 
             return state;        
     }

@@ -5,6 +5,7 @@ const context = createContext({
     isAuth: false,
     draft: null, 
     pins: [],
+    vehicles: [],
     currentPin: null
 })
 

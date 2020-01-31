@@ -1,5 +1,6 @@
 const { AuthenticationError } = require('apollo-server')
 const Pin = require('./models/Pin')
+const VehiclePosition = require('./models/VehiclePosition')
 
 const authenticated = next => (root, args, ctx, info) => {
     if (!ctx.currentUser) {
@@ -16,6 +17,13 @@ module.exports = {
         getPins: async (root, args, ctx) => {
             const pins = await Pin.find({}).populate('author').populate('comments.author');
             return pins;
+        },
+        getVehiclePositions: async (root, args, ctx) => {
+            const vehiclePositions = await VehiclePosition.find({ 
+                "vehicle.trip": { $exists: true} ,
+                "vehicle.occupancy_status": 1
+            });
+            return vehiclePositions;
         }
     },
     Mutation: {

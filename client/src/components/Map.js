@@ -2,28 +2,22 @@ import React, {useState, useEffect, useContext} from "react";
 import { withStyles } from "@material-ui/core/styles";
 import ReactMapGL, {NavigationControl, Marker, Popup} from 'react-map-gl';
 import {useClient} from '../client';
-import {GET_PINS_QUERY} from '../graphql/queries';
-
-// import Button from "@material-ui/core/Button";
+import {GET_PINS_QUERY, GET_VEHICLE_POSITION_QUERY} from '../graphql/queries';
 import Typography from "@material-ui/core/Typography";
-// import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
-
 import PinIcon from './PinIcon';
 import Context from '../context';
-import Blog from './Blog';
-import { CREATE_PIN_MUTATION } from "../graphql/mutations";
+
 
 const INITIAL_VIEWPORT  = {
   latitude: -36.8484597,
   longitude: 174.7633315,
-  zoom: 13
+  zoom: 10
 }
 
 const Map = ({ classes }) => {
   const client = useClient();
   const {state, dispatch} = useContext(Context);
   const [viewport, setViewport] = useState(INITIAL_VIEWPORT);
-  const [userPosition, setUserPosition] = useState({latitude: -36.8484597, longitude: 174.7633315});
   const [popup, setPopup] = useState(null);
 
   useEffect(() => {
@@ -33,6 +27,17 @@ const Map = ({ classes }) => {
   useEffect(() => {
     getPins()
   }, [])
+
+  useEffect(() => {
+    getVehicles()
+  },[])
+
+  const getVehicles = async () => {
+    const {getVehiclePositions} = await client.request(GET_VEHICLE_POSITION_QUERY);
+    dispatch({type: "GET_VEHICLES", payload: getVehiclePositions})
+
+    console.log(getVehiclePositions.length);
+  }
 
   const getPins = async () => {
     const { getPins} = await client.request(GET_PINS_QUERY);
@@ -45,24 +50,9 @@ const Map = ({ classes }) => {
         const {latitude, longitude} = position.coords;
         
         setViewport({...viewport, latitude, longitude});
-        setUserPosition({latitude, longitude});       
+        
       });
     }
-  }
-
-  const handleMapClick = ({lngLat, leftButton}) => {
-    console.log("oh here...");
-    if (!leftButton) return;
-    if (!state.draft) {
-      dispatch({type: "CREATE_DRAFT"})
-    }
-
-    const [longitude, latitude] = lngLat;
-    
-    dispatch({
-      type: "UPDATE_DRAFT_LOCATION",
-      payload: {longitude, latitude}
-    });    
   }
 
   const handleViewPortChange = newViewport => {
@@ -95,8 +85,7 @@ const Map = ({ classes }) => {
       width="100vw"
       height="calc(100vh - 64px)" 
       mapStyle="mapbox://styles/mapbox/streets-v9" 
-      mapboxApiAccessToken="pk.eyJ1IjoibWlrZW5ndXllbiIsImEiOiJjazV4OWsyb24yM29pM21vbm1iOWczcWVuIn0.-bnGQr4bUUFasXDdcRqpZw" 
-      onClick={handleMapClick}
+      mapboxApiAccessToken="pk.eyJ1IjoibWlrZW5ndXllbiIsImEiOiJjazV4OWsyb24yM29pM21vbm1iOWczcWVuIn0.-bnGQr4bUUFasXDdcRqpZw"       
       onViewStateChange={handleViewPortChange}
       {...viewport}
     >
@@ -130,7 +119,7 @@ const Map = ({ classes }) => {
       )} */}
 
       {/* Created Pins*/}
-      {state.pins.map(pin => (
+      {/* {state.pins.map(pin => (
         <Marker
           key={pin._id}
           latitude={pin.latitude}
@@ -142,6 +131,23 @@ const Map = ({ classes }) => {
             color={pin.color} 
             type={pin.type} 
             onClick={() => handleSelectPin(pin)}
+          />
+        </Marker>
+      ))} */}
+
+      {/* Create vehicle*/}
+      {state.vehicles.map(({_id, vehicle}) => (
+        <Marker
+          key={_id}
+          latitude={vehicle.position.latitude}
+          longitude={vehicle.position.longitude}
+          offsetLeft={-19}
+          offsetTop={-37}           
+          >
+          <PinIcon 
+            color="blue"
+            type="bus" 
+            onClick={() => console.log(vehicle)}
           />
         </Marker>
       ))}
