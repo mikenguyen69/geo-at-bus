@@ -25,3 +25,27 @@ export const CREATE_PIN_MUTATION = `
         }
     }
 `
+
+export const CREATE_VEHICLE_MUTATION = `
+    mutation($id: String!, $label: String!, $license_plate: String!,$latitude: Float!, $longitude: Float!, $bearing: String!, $speed: Float!, $delay: Float) {
+    createVehicle(input: {
+        id: $id,
+        label: $label,
+        license_plate: $license_plate,    
+        latitude: $latitude,
+        longitude: $longitude,
+        bearing: $bearing,
+        speed: $speed,
+        delay: $delay        
+    }) {
+        id
+        label
+        license_plate
+        latitude
+        longitude
+        bearing
+        speed
+        delay
+    }
+}
+`

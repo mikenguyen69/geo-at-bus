@@ -2,7 +2,7 @@ import React, {useState, useEffect, useContext} from "react";
 import { withStyles } from "@material-ui/core/styles";
 import ReactMapGL, {NavigationControl, Marker, Popup} from 'react-map-gl';
 import {useClient} from '../client';
-import {GET_PINS_QUERY, GET_VEHICLE_POSITION_QUERY, GET_TRIP_UPDATE_QUERY} from '../graphql/queries';
+import {GET_PINS_QUERY, GET_VEHICLE_QUERY} from '../graphql/queries';
 import Typography from "@material-ui/core/Typography";
 import PinIcon from './PinIcon';
 import Context from '../context';
@@ -33,45 +33,28 @@ const Map = ({ classes }) => {
     getVehicles()     
   },[])
 
-  const getTripUpdates = async (vehicleList) => {
-    const {getTripUpdates} = await client.request(GET_TRIP_UPDATE_QUERY);
-    //dispatch({type: "GET_TRIPS", payload: getTripUpdates});
-    const newVehicles = vehicleList.map(obj => {
-      let newObj = obj;                
-      const trip = getTripUpdates.find(x => x.trip_update.vehicle.id === obj.vehicle.vehicle.id);
-      if (trip !== undefined) {
-          const delay = trip.trip_update.delay;
-          let status = "";
-          if (delay > 200) {
-              status = "red"
-          }
-          else if (delay > 0) {
-              status = "blue"
-          }
-          else {
-              status = "green"
-          }
-
-          newObj.vehicle.status = status;
-      }
-
-      return newObj;
+  const getVehicles = async () => {
+    let {getVehicles} = await client.request(GET_VEHICLE_QUERY);
+    getVehicles.forEach((item) => {
+      item.status = handleColorDisplay(item.delay);
     });
-    
-    
-    console.log(vehicleList);
-    setVehicles(vehicleList.filter(x => x.vehicle.status !== null));
+    console.log(getVehicles.length);
+    setVehicles(getVehicles);
   }
 
-  const getVehicles = async () => {
-    const {getVehiclePositions} = await client.request(GET_VEHICLE_POSITION_QUERY);
-    //dispatch({type: "GET_VEHICLES", payload: getVehiclePositions})
-    
-    // setVehicles(getVehiclePositions);
+  const handleColorDisplay = (delay) => {
+    let status = "";
+    if (delay > 200) {
+        status = "red"
+    }
+    else if (delay > 0) {
+        status = "blue"
+    }
+    else {
+        status = "green"
+    }
 
-    console.log(getVehiclePositions.length);
-
-    getTripUpdates(getVehiclePositions);
+    return status;
   }
 
   const getPins = async () => {
@@ -134,53 +117,12 @@ const Map = ({ classes }) => {
         <NavigationControl onViewStateChange={handleViewPortChange} />
       </div>
 
-      {/* For current user location */}
-      {/* {userPosition && (        
-          <Marker
-            latitude={userPosition.latitude}
-            longitude={userPosition.longitude}
-            offsetLeft={-19}
-            offsetTop={-37}
-            >
-            <PinIcon color="darkorange" />
-          </Marker>          
-      )} */}
-
-      {/* Draft Pin */}
-      {/* {state.draft && (
-        <Marker
-        latitude={state.draft.latitude}
-        longitude={state.draft.longitude}
-        offsetLeft={-19}
-        offsetTop={-37}
-        >
-        <PinIcon color="hotpink" />
-      </Marker>
-      )} */}
-
-      {/* Created Pins*/}
-      {/* {state.pins.map(pin => (
-        <Marker
-          key={pin._id}
-          latitude={pin.latitude}
-          longitude={pin.longitude}
-          offsetLeft={-19}
-          offsetTop={-37}           
-          >
-          <PinIcon 
-            color={pin.color} 
-            type={pin.type} 
-            onClick={() => handleSelectPin(pin)}
-          />
-        </Marker>
-      ))} */}
-
       {/* Create vehicle*/}
-      {vehicles.map(({_id, vehicle, status}) => (
+      {vehicles.map((vehicle) => (
         <Marker
-          key={_id}
-          latitude={vehicle.position.latitude}
-          longitude={vehicle.position.longitude}
+          key={vehicle.id}
+          latitude={vehicle.latitude}
+          longitude={vehicle.longitude}
           offsetLeft={-19}
           offsetTop={-37}           
           >
@@ -190,7 +132,7 @@ const Map = ({ classes }) => {
               type="bus"         
               onClick={() => handleSelectPin(vehicle)}
             />
-            {/* <Typography>{vehicle.vehicle.license_plate}</Typography> */}
+                       
           </div>
           
         </Marker>
@@ -199,8 +141,8 @@ const Map = ({ classes }) => {
       {/* Show Popups*/}
       {popup && (
         <Popup anchor="top"
-          latitude={popup.position.latitude}
-          longitude={popup.position.longitude}
+          latitude={popup.latitude}
+          longitude={popup.longitude}
           closeOnClick={false}
           onClose={() => setPopup(null)}
         >
@@ -211,11 +153,11 @@ const Map = ({ classes }) => {
           /> */}
           <div className={classes.popupTab}>
             <Typography>
-              <b>{popup.vehicle.label} (Plate No of {popup.vehicle.license_plate})</b> {" is "} <font color={popup.status}>{handleShowStatus(popup.status)}</font>
+              <b>{popup.label} (Plate No of {popup.license_plate})</b> {" is "} <font color={popup.status}>{handleShowStatus(popup.status)}</font>
             </Typography>            
             <Typography> 
               <br />
-              <i>{handleShowSpeed(popup.position.speed)}</i>
+              <i>{handleShowSpeed(popup.speed)}</i>
             </Typography>
           </div>
         </Popup>

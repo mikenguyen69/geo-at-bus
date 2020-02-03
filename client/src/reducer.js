@@ -63,6 +63,16 @@ export default function reducer(state, {type, payload}) {
                 currentPin: payload,
                 draft: null
             }
+        
+        case 'CREATE_VEHICLE': {
+            const newVehicle = payload
+            const previousVehicles = state.vehicles.filter(v => v._id !== newVehicle._id)
+
+            return {
+                ...state,
+                vehicles: [...previousVehicles, newVehicle]
+            } 
+        }
 
         case "GET_VEHICLES":             
             return {
