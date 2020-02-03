@@ -1,7 +1,5 @@
 const { AuthenticationError } = require('apollo-server')
 const Pin = require('./models/Pin')
-const VehiclePosition = require('./models/VehiclePosition')
-const TripUpdate = require('./models/TripUpdate')
 const Vehicle = require('./models/Vehicle')
 
 const authenticated = next => (root, args, ctx, info) => {
@@ -21,7 +19,7 @@ module.exports = {
             return pins;
         },
         getVehicles: async (root, args, ctx) => {
-            const vehicles = await Vehicle.find({});
+            const vehicles = await Vehicle.find({'isUpdated': 1});
             return vehicles;
         },
     },
@@ -38,13 +36,34 @@ module.exports = {
 
         }),
 
-        createVehicle: authenticated(async (root, args, ctx) => {
-            const newVehicle = await new Vehicle({
-                ...args.input               
-            }).save()
+        createVehicle: authenticated(async (root, args, ctx) => {            
 
-            // const pinAdded = await Pin.populate(newPin, 'author')        
-            // return pinAdded;
+            const newPosition = {...args.input, 'isUpdated': 1};
+
+            const filter = {
+                'id': newPosition.id, 
+                'label': newPosition.label,
+                'license_plate': newPosition.license_plate
+            };
+            const existVehicle = (await Vehicle.find( filter ))[0];
+
+            if (!existVehicle || existVehicle === undefined) {
+                const newVehicle = await new Vehicle(
+                    {...newPosition})
+                    .save();
+            } 
+            else {                               
+                if (newPosition.latitude !== existVehicle.latitude 
+                    && newPosition.longitude !== existVehicle.longitude) {
+                    
+                    const updatedPosition = await Vehicle.findOneAndUpdate(filter, newPosition, {new: true});                                    
+                    console.log("Updated", updatedPosition);
+                } 
+                else {
+                    const updatedPosition = await Vehicle.findOneAndUpdate(filter, {'isUpdated': 0}, {new: true}); 
+                    console.log("No updated", updatedPosition);
+                }               
+            }                
         }),
     }
 }

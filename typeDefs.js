@@ -56,12 +56,14 @@ module.exports = gql`
         bearing: String
         speed: Float
         delay: Float
+        isUpdated: Float
     }
 
     type Query {
         me: User
         getPins: [Pin!] 
-        getVehicles: [Vehicle!]       
+        getVehicles: [Vehicle!]
+       
     }
 
     type Mutation {

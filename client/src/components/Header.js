@@ -49,15 +49,13 @@ const Header = ({ classes }) => {
               bearing: item.vehicle.position.bearing === 0 ? "": item.vehicle.position.bearing,
               speed: item.vehicle.position.speed,              
             }
-
-            console.log(`${count}: ${vehicles}`);
-
+                        
             const trip = trips.find(x => x.trip_update && x.trip_update.vehicle && x.trip_update.vehicle.id === vehicle.id);
             if (trip !== undefined) {
                 vehicle.delay = trip.trip_update.delay;
 
                 submitCreateVehicle(vehicle);
-           
+                                
                 count++;
             }
             console.log('total vehicle created: ', count);

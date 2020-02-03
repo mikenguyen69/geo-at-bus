@@ -8,7 +8,8 @@ const VehicleSchema = new mongoose.Schema({
     longitude: Number,
     bearing: String,
     speed: Number,
-    delay: Number
+    delay: Number,
+    isUpdated: Number
 },)
 
 module.exports = mongoose.model("Vehicle", VehicleSchema);
