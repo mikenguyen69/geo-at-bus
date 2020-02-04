@@ -6,7 +6,8 @@ import {GET_PINS_QUERY, GET_VEHICLE_QUERY} from '../graphql/queries';
 import Typography from "@material-ui/core/Typography";
 import PinIcon from './PinIcon';
 import Context from '../context';
-
+import {Subscription} from 'react-apollo';
+import {VEHICLE_UPDATED_SUBCRIPTION, VEHICLE_CREATED_SUBCRIPTION, VEHICLE_DELETED_SUBCRIPTION} from '../graphql/subscriptions';
 
 const INITIAL_VIEWPORT  = {
   latitude: -36.8484597,
@@ -19,8 +20,7 @@ const Map = ({ classes }) => {
   const {state, dispatch} = useContext(Context);
   const [viewport, setViewport] = useState(INITIAL_VIEWPORT);
   const [popup, setPopup] = useState(null);
-  const [vehicles, setVehicles] = useState([]);
-
+ 
   useEffect(() => {
     getUserPosition()
   },[]);
@@ -34,27 +34,9 @@ const Map = ({ classes }) => {
   },[])
 
   const getVehicles = async () => {
-    let {getVehicles} = await client.request(GET_VEHICLE_QUERY);
-    getVehicles.forEach((item) => {
-      item.status = handleColorDisplay(item.delay);
-    });
-    console.log(getVehicles.length);
-    setVehicles(getVehicles);
-  }
-
-  const handleColorDisplay = (delay) => {
-    let status = "";
-    if (delay > 200) {
-        status = "red"
-    }
-    else if (delay > 0) {
-        status = "blue"
-    }
-    else {
-        status = "green"
-    }
-
-    return status;
+    let {getVehicles} = await client.request(GET_VEHICLE_QUERY);    
+    
+    dispatch({type: "GET_VEHICLES", payload: getVehicles});
   }
 
   const getPins = async () => {
@@ -118,7 +100,7 @@ const Map = ({ classes }) => {
       </div>
 
       {/* Create vehicle*/}
-      {vehicles.map((vehicle) => (
+      {state.vehicles.map((vehicle) => (
         <Marker
           key={vehicle.id}
           latitude={vehicle.latitude}
@@ -128,11 +110,11 @@ const Map = ({ classes }) => {
           >
           <div className={classes.popupTab}>
             <PinIcon 
-              color={vehicle.status}
+              color={vehicle.color}
               type="bus"         
               onClick={() => handleSelectPin(vehicle)}
             />
-                       
+
           </div>
           
         </Marker>
@@ -153,7 +135,7 @@ const Map = ({ classes }) => {
           /> */}
           <div className={classes.popupTab}>
             <Typography>
-              <b>{popup.label} (Plate No of {popup.license_plate})</b> {" is "} <font color={popup.status}>{handleShowStatus(popup.status)}</font>
+              <b>{popup.label} (Plate No of {popup.license_plate})</b> {" is "} <font color={popup.color}>{handleShowStatus(popup.color)}</font>
             </Typography>            
             <Typography> 
               <br />
@@ -166,8 +148,31 @@ const Map = ({ classes }) => {
       }
     </ReactMapGL>
 
-    {/* Blog area to add Pin content */}
-    {/* <Blog /> */}
+    {/* Subscriptions for vehicle updates */}
+    <Subscription 
+      subscription={VEHICLE_CREATED_SUBCRIPTION} 
+      onSubscriptionData={({ subscriptionData}) => {
+        const {vehicleCreated} = subscriptionData.data              
+        dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: vehicleCreated})
+      }}
+    />
+
+    <Subscription 
+      subscription={VEHICLE_UPDATED_SUBCRIPTION} 
+      onSubscriptionData={({ subscriptionData}) => {
+        const {vehicleUpdated} = subscriptionData.data              
+        dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: vehicleUpdated})
+      }}
+    />
+
+    <Subscription 
+      subscription={VEHICLE_DELETED_SUBCRIPTION} 
+      onSubscriptionData={({ subscriptionData}) => {
+        const {vehicleDeleted} = subscriptionData.data              
+        dispatch({type: "DELETE_VEHICLE", payload: vehicleDeleted})
+      }}
+    />
+
   </div>)
 };
 

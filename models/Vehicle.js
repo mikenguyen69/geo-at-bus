@@ -9,6 +9,7 @@ const VehicleSchema = new mongoose.Schema({
     bearing: String,
     speed: Number,
     delay: Number,
+    color: String,
     isUpdated: Number
 },)
 

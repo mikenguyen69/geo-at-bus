@@ -1,13 +1,17 @@
-const { AuthenticationError } = require('apollo-server')
+const { AuthenticationError, PubSub } = require('apollo-server')
 const Pin = require('./models/Pin')
 const Vehicle = require('./models/Vehicle')
+
+const pubsub = new PubSub()
+const VEHICLE_CREATED = "VEHICLE_CREATED"
+const VEHICLE_UPDATED = "VEHICLE_UPDATED"
+const VEHICLE_DELETED = "VEHICLE_DELETED"
 
 const authenticated = next => (root, args, ctx, info) => {
     if (!ctx.currentUser) {
         throw new AuthenticationError('You must be logged in')
     }
     
-
     return next(root, args, ctx, info)
 }
 
@@ -30,40 +34,60 @@ module.exports = {
                 author: ctx.currentUser
             }).save()
 
-            const pinAdded = await Pin.populate(newPin, 'author')
-            
+            const pinAdded = await Pin.populate(newPin, 'author')            
             return pinAdded;
-
         }),
 
         createVehicle: authenticated(async (root, args, ctx) => {            
 
-            const newPosition = {...args.input, 'isUpdated': 1};
+            const newPosition = {...args.input};
+
+            const vehicleCreated = await new Vehicle(
+                {...newPosition})
+                .save();
+                
+            pubsub.publish(VEHICLE_CREATED, {vehicleCreated});   
+
+            return vehicleCreated;
+        }),
+        
+        updateVehicle: authenticated(async (root, args, ctx) => {            
+
+            const newPosition = {...args.input};
 
             const filter = {
                 'id': newPosition.id, 
                 'label': newPosition.label,
                 'license_plate': newPosition.license_plate
             };
-            const existVehicle = (await Vehicle.find( filter ))[0];
 
-            if (!existVehicle || existVehicle === undefined) {
-                const newVehicle = await new Vehicle(
-                    {...newPosition})
-                    .save();
-            } 
-            else {                               
-                if (newPosition.latitude !== existVehicle.latitude 
-                    && newPosition.longitude !== existVehicle.longitude) {
-                    
-                    const updatedPosition = await Vehicle.findOneAndUpdate(filter, newPosition, {new: true});                                    
-                    console.log("Updated", updatedPosition);
-                } 
-                else {
-                    const updatedPosition = await Vehicle.findOneAndUpdate(filter, {'isUpdated': 0}, {new: true}); 
-                    console.log("No updated", updatedPosition);
-                }               
-            }                
+            const vehicleUpdated = await Vehicle.findOneAndUpdate(filter, newPosition, {new: true}).exec();     
+
+            pubsub.publish(VEHICLE_UPDATED, {vehicleUpdated});  
+            
+            return vehicleUpdated;
+                            
         }),
+
+        deleteVehicle: authenticated(async (root, args, ctx) => {            
+            const deleteVehicle = {...args.input};
+
+            await Vehicle.findOneAndDelete({deleteVehicle}).exec();
+
+            pubsub.publish(VEHICLE_DELETED, {deleteVehicle});     
+            
+            return deleteVehicle;
+        })
+    },
+    Subscription: {
+        vehicleCreated: {
+            subscribe: () => pubsub.asyncIterator(VEHICLE_CREATED)
+        },
+        vehicleUpdated: {
+            subscribe: () => pubsub.asyncIterator(VEHICLE_UPDATED)
+        },
+        vehicleDeleted: {
+            subscribe: () => pubsub.asyncIterator(VEHICLE_DELETED)
+        }
     }
 }

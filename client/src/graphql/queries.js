@@ -47,7 +47,9 @@ export const GET_VEHICLE_QUERY = `{
         longitude
         bearing
         speed
-        delay      
+        delay
+        color
+        isUpdated      
     }
 }
 `

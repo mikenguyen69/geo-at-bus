@@ -64,50 +64,40 @@ export default function reducer(state, {type, payload}) {
                 draft: null
             }
         
-        case 'CREATE_VEHICLE': {
+        case "CREATE_OR_UPDATE_VEHICLE": {
             const newVehicle = payload
-            const previousVehicles = state.vehicles.filter(v => v._id !== newVehicle._id)
+            const previousVehicles = state.vehicles.filter(v => v.id !== newVehicle.id)
+
+            console.log('Create or update vehicle from state', newVehicle);
+
 
             return {
                 ...state,
                 vehicles: [...previousVehicles, newVehicle]
             } 
+        } 
+        
+        case "DELETE_VEHICLE": {            
+            const deleteList = payload;
+            console.log('Removing vehicle from state', deleteList);
+
+            const previousVehicles = state.vehicles.filter(v => deleteList.find(x => v.id === x.id) === undefined)
+
+            return {
+                ...state,
+                vehicles: [...previousVehicles]
+            } 
         }
 
-        case "GET_VEHICLES":             
+        case "GET_VEHICLES":  {     
+            console.log(payload.length, payload[0])
+
             return {
                 ...state,
                 vehicles: payload
             }
 
-        case "GET_TRIPS":           
-            const trips = payload;
-            const updatedVehicles = state.vehicles.map(obj => {
-                let newObj = obj;                
-                const trip = trips.find(x => x.id === obj.vehicle.trip.trip_id);
-                if (trip !== undefined) {
-                    const delay = trip.trip_update.delay;
-                    let status = "";
-                    if (delay > 200) {
-                        status = "red"
-                    }
-                    else if (delay > 0) {
-                        status = "blue"
-                    }
-                    else {
-                        status = "green"
-                    }
-
-                    newObj.status = status;
-                }
-                return newObj;
-            });
-            
-            return {
-                ...state,
-                trips: payload,
-                vehicles: updatedVehicles
-            }
+        }
 
         default: 
             return state;        

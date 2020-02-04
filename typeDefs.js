@@ -28,7 +28,7 @@ module.exports = gql`
     }
 
     type Vehicle {
-        id: String,
+        id: String
         label: String
         license_plate: String
         latitude: Float
@@ -36,6 +36,8 @@ module.exports = gql`
         bearing: String
         speed: Float
         delay: Float
+        color: String
+        isUpdated: Float
     }
 
     input CreatePinInput {
@@ -47,8 +49,8 @@ module.exports = gql`
         longitude: Float
     }
 
-    input CreateVehicle {
-        id: String,
+    input CreateOrUpdateVehicle {
+        id: String
         label: String
         license_plate: String
         latitude: Float
@@ -56,7 +58,13 @@ module.exports = gql`
         bearing: String
         speed: Float
         delay: Float
-        isUpdated: Float
+        color: String        
+    }
+
+    input DeleteVehicle {
+        id: String
+        label: String
+        license_plate: String
     }
 
     type Query {
@@ -68,7 +76,14 @@ module.exports = gql`
 
     type Mutation {
         createPin(input: CreatePinInput!): Pin
-        createVehicle(input: CreateVehicle!): Vehicle
+        createVehicle(input: CreateOrUpdateVehicle!): Vehicle
+        updateVehicle(input: CreateOrUpdateVehicle!): Vehicle
+        deleteVehicle(input: DeleteVehicle!): Vehicle
+    }
 
+    type Subscription {
+        vehicleCreated: Vehicle
+        vehicleUpdated: Vehicle
+        vehicleDeleted: Vehicle
     }
 `
