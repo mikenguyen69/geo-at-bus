@@ -70,13 +70,18 @@ module.exports = {
         }),
 
         deleteVehicle: authenticated(async (root, args, ctx) => {            
-            const deleteVehicle = {...args.input};
+            const tobeDeleted = {...args.input};
+            const filter = {
+                'id': tobeDeleted.id, 
+                'label': tobeDeleted.label,
+                'license_plate': tobeDeleted.license_plate
+            };
 
-            await Vehicle.findOneAndDelete({deleteVehicle}).exec();
+            const vehicleDeleted = await Vehicle.findOneAndDelete(filter, tobeDeleted).exec();
 
-            pubsub.publish(VEHICLE_DELETED, {deleteVehicle});     
+            pubsub.publish(VEHICLE_DELETED, {vehicleDeleted});     
             
-            return deleteVehicle;
+            return vehicleDeleted;
         })
     },
     Subscription: {

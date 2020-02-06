@@ -5,9 +5,8 @@ const context = createContext({
     isAuth: false,
     draft: null, 
     pins: [],
-    vehicles: [],
-    trips: [],
-    currentPin: null
+    vehicles: [],    
+    intervalID: null
 })
 
 export default context;

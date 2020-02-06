@@ -15,6 +15,8 @@ const Header = ({ classes }) => {
   const {state, dispatch} = useContext(Context)
   const {currentUser} = state
   const [newloaded, setNewloaded] = useState([]);
+  const [intervalID, setIntervalID] = useState(null);
+  const [isFirstTime, setIsFirstTime] = useState(true);
 
   useEffect(() => {
     reloadVehicles()
@@ -26,40 +28,62 @@ const Header = ({ classes }) => {
     // Rule 2: if loaded vehicle is in the list --> DB: Update | State: Delete + Add
     // Rule 3: if the existing list no longer exist in the loaded --> DB: Delete | State: Delete
     
-    if (!newloaded || newloaded.length === 0) return;
-    let count = 0;
+    if (!newloaded || newloaded.length === 0) return;    
     let existingVehicles = state.vehicles;
-    let deletedList = [];
-
+    let deletedCount = 0, createdCount = 0, updatedCount = 0;
     existingVehicles.forEach((existingVehicle) => {
       const existingInLoaded = newloaded.find(x => x.id === existingVehicle.id && x.label===existingVehicle.label && x.license_plate === existingVehicle.license_plate);
       if (existingInLoaded === undefined) {
-        // Rule 3: delete
-        
-        if (count++ > 10) return;
-        
-        deletedList.push(existingVehicle);      
+        // Rule 3: delete                
+        submitDeleteVehicle(existingVehicle)
+        deletedCount++
       }
     })
 
-    submitDeleteVehicle(deletedList);
+    newloaded.forEach((loadedVehicle) => {             
+      const existingVehicle = state.vehicles.find(x => x.id === loadedVehicle.id && x.label===loadedVehicle.label && x.license_plate === loadedVehicle.license_plate);
+      if (existingVehicle === undefined) {
+        // Rule 1: new
+        submitCreateVehicle(loadedVehicle)
+        createdCount++
+      }
+      else {
+        // Rule 2: update
+        submitUpdateVehicle(loadedVehicle)
+        updatedCount++
+      }
+    })
 
-    // newloaded.forEach((loadedVehicle) => {             
-    //   const existingVehicle = state.vehicles.find(x => x.id === loadedVehicle.id && x.label===loadedVehicle.label && x.license_plate === loadedVehicle.license_plate);
-    //   if (existingVehicle === undefined) {
-    //     // Rule 1: new
-    //     submitCreateVehicle(loadedVehicle)
-    //   }
-    //   else {
-    //     // Rule 2: update
-    //     submitUpdateVehicle(loadedVehicle)
-    //   }
-    // })
+    // rendering may take some time    
+    console.log("Being updated ... ", {deletedCount, createdCount, updatedCount})
+  }
+
+  const startLive = () => {
+    // for the very first time   
+    console.log("Start streaming now....");
+    if (isFirstTime) {
+      handleReloadVehicles();
+      setIsFirstTime(false);
+    }
+    
+    var id = setInterval(handleReloadVehicles, 60000)
+    
+    setIntervalID(id);    
+  }
+
+  const stopLive = () => {
+    console.log("Stop streaming !!! ");
+    clearInterval(intervalID);
+    setIntervalID(null);    
+    setIsFirstTime(true);
   }
 
   const handleReloadVehicles = async () => {
-    console.log("Reloading the list now....");
-    
+    console.log("Reloading the list now.... at", Date.now());
+    fetchData();
+  }
+
+  const fetchData = () => {
     axios.defaults.headers.common['Ocp-Apim-Subscription-Key'] = '3cb5e82c66cd47aebd8f5f21f0cef60d';
     axios     
       .get(`https://api.at.govt.nz/v2/public/realtime/vehiclelocations`)
@@ -97,7 +121,7 @@ const Header = ({ classes }) => {
             }            
           });
 
-          setNewloaded(loadedVehicles)
+          setNewloaded(loadedVehicles);
         })
       })
   }
@@ -117,31 +141,35 @@ const Header = ({ classes }) => {
     return status;
   }
 
-  const submitCreateVehicle = async (vehicle) => {    
-    const {createVehicle} = await client.request(CREATE_VEHICLE_MUTATION, vehicle);    
-    dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: createVehicle})
+  const submitCreateVehicle = async (vehicle) => {        
+    try {
+      const {createVehicle} = await client.request(CREATE_VEHICLE_MUTATION, vehicle); 
+      dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: createVehicle})
+    }
+    catch(err) {
+      console.error("Error creating vehicle", vehicle, err);
+    }
   }
 
   const submitUpdateVehicle = async (vehicle) => {    
-    const {updateVehicle} = await client.request(UPDATE_VEHICLE_MUTATION, vehicle);        
-    
-    dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: updateVehicle})
+    try {
+      const {updateVehicle} = await client.request(UPDATE_VEHICLE_MUTATION, vehicle);            
+      dispatch({type: "CREATE_OR_UPDATE_VEHICLE", payload: updateVehicle})
+    }
+    catch(err) {
+      console.error("Error updating vehicle", vehicle, err);
+    }
   }
 
-  const submitDeleteVehicle = async (vehicles) => {    
-    
-    let deletedList1 = vehicles; 
-    deletedList1.forEach((vehicle) => {
-      //deleteExistingVehicle(vehicle)
-    })    
-        
-    dispatch({type:"DELETE_VEHICLE", payload: vehicles});   
+  const submitDeleteVehicle = async (vehicle) => {    
+    try {
+      const {deleteVehicle} = await client.request(DELETE_VEHICLE_MUTATION, vehicle);        
+      dispatch({type:"DELETE_VEHICLE", payload: deleteVehicle})
+    }
+    catch(err) {
+      console.error("Error deleting vehicle", vehicle, err)
+    }
   }
-
-  const deleteExistingVehicle = async (vehicle) => {
-    await client.request(DELETE_VEHICLE_MUTATION, vehicle);
-  }
-  
 
   return (
     <div className={classes.root}>
@@ -177,8 +205,16 @@ const Header = ({ classes }) => {
             </div>
 
           )}
-          <button onClick={handleReloadVehicles}>Reload the list</button>        
+          {intervalID &&  (
+            <button onClick={stopLive}>Stop Streaming ... </button>
+          )}
+
+          {!intervalID && (
+            <button onClick={startLive}>Start Streaming ... </button>
+          )}
+               
           {/* Signout Button */}
+          {" "}
           <Signout />
         </Toolbar>
       </AppBar>

@@ -12,7 +12,7 @@ import {VEHICLE_UPDATED_SUBCRIPTION, VEHICLE_CREATED_SUBCRIPTION, VEHICLE_DELETE
 const INITIAL_VIEWPORT  = {
   latitude: -36.8484597,
   longitude: 174.7633315,
-  zoom: 13
+  zoom: 9
 }
 
 const Map = ({ classes }) => {
@@ -89,10 +89,12 @@ const Map = ({ classes }) => {
     <ReactMapGL
       width="100vw"
       height="calc(100vh - 64px)" 
-      mapStyle="mapbox://styles/mapbox/streets-v9" 
+      mapStyle="mapbox://styles/mapbox/streets-v9?optimize=true" 
       mapboxApiAccessToken="pk.eyJ1IjoibWlrZW5ndXllbiIsImEiOiJjazV4OWsyb24yM29pM21vbm1iOWczcWVuIn0.-bnGQr4bUUFasXDdcRqpZw"       
       onViewStateChange={handleViewPortChange}
       {...viewport}
+      minZoom={8}
+      maxZoom={13}
     >
       {/* Naviation control*/}
       <div className={classes.navigationControl}>

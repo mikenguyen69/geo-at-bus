@@ -63,26 +63,24 @@ export default function reducer(state, {type, payload}) {
                 currentPin: payload,
                 draft: null
             }
+
+        case "SET_INTERVAL": 
+            return {
+                ...state,
+                intervalID: payload
+            }
         
         case "CREATE_OR_UPDATE_VEHICLE": {
-            const newVehicle = payload
+            const newVehicle = payload            
             const previousVehicles = state.vehicles.filter(v => v.id !== newVehicle.id)
-
-            console.log('Create or update vehicle from state', newVehicle);
-
-
             return {
                 ...state,
                 vehicles: [...previousVehicles, newVehicle]
             } 
         } 
         
-        case "DELETE_VEHICLE": {            
-            const deleteList = payload;
-            console.log('Removing vehicle from state', deleteList);
-
-            const previousVehicles = state.vehicles.filter(v => deleteList.find(x => v.id === x.id) === undefined)
-
+        case "DELETE_VEHICLE": {                        
+            const previousVehicles = state.vehicles.filter(v => v.id !== payload.id)
             return {
                 ...state,
                 vehicles: [...previousVehicles]
@@ -90,7 +88,7 @@ export default function reducer(state, {type, payload}) {
         }
 
         case "GET_VEHICLES":  {     
-            console.log(payload.length, payload[0])
+            console.log("Total: ", payload.length)
 
             return {
                 ...state,
