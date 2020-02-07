@@ -8,15 +8,17 @@ import PinIcon from './PinIcon';
 import Context from '../context';
 import {Subscription} from 'react-apollo';
 import {VEHICLE_UPDATED_SUBCRIPTION, VEHICLE_CREATED_SUBCRIPTION, VEHICLE_DELETED_SUBCRIPTION} from '../graphql/subscriptions';
+import {unstable_useMediaQuery as useMediaQuery} from '@material-ui/core/useMediaQuery'
 
 const INITIAL_VIEWPORT  = {
   latitude: -36.8484597,
   longitude: 174.7633315,
-  zoom: 9
+  zoom: 13
 }
 
 const Map = ({ classes }) => {
   const client = useClient();
+  const mobileSize = useMediaQuery("(max-width: 650px)");
   const {state, dispatch} = useContext(Context);
   const [viewport, setViewport] = useState(INITIAL_VIEWPORT);
   const [popup, setPopup] = useState(null);
@@ -85,7 +87,7 @@ const Map = ({ classes }) => {
   }
 
   return (
-  <div className={classes.root}>
+  <div className={mobileSize ? classes.rootMobiles : classes.root}>
     <ReactMapGL
       width="100vw"
       height="calc(100vh - 64px)" 
@@ -93,8 +95,7 @@ const Map = ({ classes }) => {
       mapboxApiAccessToken="pk.eyJ1IjoibWlrZW5ndXllbiIsImEiOiJjazV4OWsyb24yM29pM21vbm1iOWczcWVuIn0.-bnGQr4bUUFasXDdcRqpZw"       
       onViewStateChange={handleViewPortChange}
       {...viewport}
-      minZoom={8}
-      maxZoom={13}
+      scrollZoom={mobileSize}
     >
       {/* Naviation control*/}
       <div className={classes.navigationControl}>

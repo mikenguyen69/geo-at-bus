@@ -9,9 +9,12 @@ import Signout from './Auth/Signout';
 import axios from 'axios';
 import {useClient} from '../client';
 import {DELETE_VEHICLE_MUTATION, CREATE_VEHICLE_MUTATION, UPDATE_VEHICLE_MUTATION} from '../graphql/mutations';
+import {unstable_useMediaQuery as useMediaQuery} from '@material-ui/core/useMediaQuery';
+
  
 const Header = ({ classes }) => {
   const client = useClient();
+  const mobileSize = useMediaQuery('(max-width: 650px)')
   const {state, dispatch} = useContext(Context)
   const {currentUser} = state
   const [newloaded, setNewloaded] = useState([]);
@@ -178,7 +181,7 @@ const Header = ({ classes }) => {
           {/* Title / Logo */}
           <div className={classes.grow}>
             <MapIcon className={classes.icon} />
-            <Typography 
+            <Typography className={mobileSize ? classes.mobile : ""}
               component="h1" 
               variant="h6" 
               color="inherit" noWrap>
@@ -195,7 +198,7 @@ const Header = ({ classes }) => {
                 alt={currentUser.name}
               />
             
-              <Typography 
+              <Typography className={mobileSize ? classes.mobile : ""}
                 variant="h5"
                 color="inherit" 
                 noWrap 
